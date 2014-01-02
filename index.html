@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>run.fm</title>
+    <style>
+        @keyframes blink
+        {
+            0%{color:transparent;}
+            49%{color:transparent;}
+            50%{color:inherit;}
+            100%{color:inherit;}
+        }
+        @-webkit-keyframes blink /* Safari and Chrome */
+        {
+            0%{color:transparent;}
+            49%{color:transparent;}
+            50%{color:inherit;}
+            100%{color:inherit;}
+        }
+        *{margin:0;padding:0;}
+        html,body{width:100%;height:100%;}
+        body{background-color:#000000;background-size:cover;background-repeat: no-repeat;color:#FFFFFF;font-family:"Lucida Console", Monaco, monospace;font-size:0.75em;}
+        a{color:inherit;}
+        .cursor{display:inline-block;height:1.25em;vertical-align:top;animation: blink 1s infinite alternate;-webkit-animation: blink 1s infinite alternate; /* Safari and Chrome */}
+        .cursor:before{content:"|";}
+        #term{padding:25px 30px 0px 30px;}
+        #input{padding: 5px 30px;}
+        .command{display:block;}
+        .command a{text-decoration:none;}
+        #input:before{content:">";margin-right:2px;}
+        .password{visibility: hidden;}
+        .password:before{color:inherit;content:"Password>" !important;margin-right:2px;visibility: visible;}
+        .title{color:#8172c0;}
+        .title:first-child{font-weight:bold;}
+        .main_title{color:#8172c0;left:-5px;margin-bottom:10px;position:relative;}
+        .title:not(:first-child){padding-top:5px;}
+        .faded{color:#999999;}
+    </style>
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/vendor/md5.js"></script>
+    <script src="http://connect.soundcloud.com/sdk.js"></script>
+    <script src="js/term.js"></script>
+    <script src="js/commands.js"></script>
+    <script src="js/addEvent.js"></script>
+    <script>
+    is_playing = false;
+    track_id = '293';
+    api_key = '0a482ce0bc80c881f8e7d6f19f98ed5b';
+    var user = {
+        username: null,
+        tempuser: null,
+        newtrack: {permalink_url: null,title: null, username: null},
+        likes: [],
+        color: "FFFFFF",
+        bg: ""
+    }
+    var player = {
+        position: 0,
+        showtime: true,
+        milli_to_minute: function(millis){
+            var minutes = Math.floor((millis / 1000)  / 60);
+            var seconds = Math.floor((millis / 1000) % 60);
+            if (minutes < 10){minutes = "0" + minutes;}
+            if (seconds < 10){seconds = "0" + seconds;}
+            return minutes + ":" + seconds;
+        },
+        track: null,
+        genre: "undefined",
+        is_playing: false,
+        history: [],
+        muted: false
+    }
+    $( document ).ready(function() {
+        term.loadCommands(commands);
+        term.printIntro();
+        commands["help"]();
+        SC.initialize({client_id: api_key});
+        SC.whenStreamingReady(function() {
+            var sound = undefined;
+            $("body").on("play", function(){
+                $("body").trigger("stop");
+                if($(".player").length>0){$(".player").parent().remove();}
+                if (typeof sound != 'undefined') {sound.destruct();}
+                sound = SC.stream(player.track.id,{
+                  onfinish: function() {
+                    term.commands["next"]();
+                  },
+                  onload: function(){
+                    if(sound.readyState==2){term.commands['play']();}
+                    else{
+                        document.title = player.track.title;
+                        player.history.push(player.track);
+                        term.commands['show']();
+                    }
+                  }
+                });
+                if(player.muted){sound.mute();}
+                sound.play({whileplaying: function() {player.position = this.position;term.commands['showtime']();}});
+                player.is_playing = true;
+            });
+            $("body").on("pause", function(){
+                if (typeof sound != 'undefined'){
+                    term.print("Paused");
+                    sound.pause();
+                    player.is_playing = true;
+                }                                
+            });
+            $("body").on("resume", function(){ 
+                if (typeof sound != 'undefined'){
+                    term.print("Resumed");
+                    sound.resume();
+                    player.is_playing = true;
+                }                                
+            });
+            $("body").on("stop", function(){
+                if (typeof sound != 'undefined'){
+                    sound.stop();
+                    player.is_playing = false; 
+                }   
+            });
+            $("body").on("mute", function(){
+                if (typeof sound != 'undefined'){
+                    sound.mute();
+                    player.muted = true;    
+                }   
+            });
+            $("body").on("unmute", function(){
+                if (typeof sound != 'undefined'){    
+                    sound.unmute();
+                    player.muted = false;
+                }   
+            });           
+        });        
+        $(document).keydown(function(e) {if (term.keydown(e)) {e.preventDefault();}});
+        $(document).keypress(function(e) {term.addLetter(e.keyCode);});
+        var drop = document.querySelector('#drop');
+        addEvent(drop, 'dragover', cancel);
+        addEvent(drop, 'dragenter', cancel);
+        addEvent(drop, 'drop', function (e) {
+            if (e.preventDefault) e.preventDefault();
+            user.bg = e.dataTransfer.getData('Text');
+            $('body').css('background-image', 'url(' + e.dataTransfer.getData('Text') + ')');
+            return false;
+        });
+    });
+    </script>
+</head>
+<body id="drop" tabindex="0">
+    <div id="term"></div>
+    <div id="input"><span class="cursor"></span></div>
+</body>
+</html>
