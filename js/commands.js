@@ -42,6 +42,7 @@ commands["play"] =  function (parts){
     .fail(function(){term.print("Skipping " + player.track);term.commands['play']();});
 };
 commands['next'] = function(){term.commands['play']();}
+commands['skip'] = function(){term.commands["next"]();}
 commands['help'] = function(){
     term.printTitle("Avaiable Commands");
     term.printHelpTitle("Music Commands");
