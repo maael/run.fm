@@ -39,10 +39,23 @@
     <script src="js/vendor/jquery.js"></script>
     <script src="js/vendor/md5.js"></script>
     <script src="http://connect.soundcloud.com/sdk.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/annyang/1.1.0/annyang.min.js"></script>
     <script src="js/term.js"></script>
     <script src="js/commands.js"></script>
     <script src="js/addEvent.js"></script>
     <script>
+    if (annyang) {
+      var anncommands = {
+        'run play *val' : function(val) {commands["play"](val);},
+        'run skip' : function() {commands["skip"]();},
+        'run next' : function() {commands["next"]();},
+        'run stop' : function() {commands["pause"]();},
+        'run continue': function() {commands["resume"]();}
+      };
+      annyang.addCommands(anncommands);
+      annyang.debug();
+      annyang.start();
+    }
     is_playing = false;
     track_id = '293';
     api_key = '0a482ce0bc80c881f8e7d6f19f98ed5b';
